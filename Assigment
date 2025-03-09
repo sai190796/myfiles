@@ -1,0 +1,118 @@
+describe('Account Creation Form', () => {
+  before(() => {
+    cy.visit(
+      'https://magento.softwaretestingboard.com/customer/account/logoutSuccess/'
+    );
+  });
+  function generateRandomEmail() {
+    const timestamp = Date.now();
+    const randomNum = Math.floor(Math.random() * 1000);
+    return `testuser${timestamp}${randomNum}@example.com`;
+  }
+
+  const randomEmail = generateRandomEmail();
+
+  it(' Verify required fields validation', () => {
+    cy.get('[class="panel header"]').within(() => {
+      cy.contains('Create an Account').should('be.visible').click();
+    });
+    cy.get('[class="action submit primary"]').click();
+
+    cy.get('[class="input-text required-entry mage-error"]')
+      .parent()
+      .contains('This is a required field.')
+      .should('be.visible');
+    cy.get('[title="Last Name"]')
+      .parent()
+      .contains('This is a required field.')
+      .should('be.visible');
+    cy.get('[title="Email"]')
+      .parent()
+      .contains('This is a required field.')
+      .should('be.visible');
+    cy.get('[title="Password"]')
+      .parent()
+      .contains('This is a required field.')
+      .should('be.visible');
+    cy.get('[title="Confirm Password"]')
+      .parent()
+      .contains('This is a required field.')
+      .should('be.visible');
+  });
+
+  it('validate password field', () => {
+    cy.get('[title="Password"]').click().type('1234');
+    cy.get('[id="password-error"]')
+      .should('be.visible')
+      .should(
+        'have.text',
+        'Minimum length of this field must be equal or greater than 8 symbols. Leading and trailing spaces will be ignored.'
+      );
+
+    cy.get('[title="Password"]').clear().click().type('123456789');
+
+    cy.get('[id="password-error"]')
+      .should('be.visible')
+      .should(
+        'have.text',
+        'Minimum of different classes of characters in password is 3. Classes of characters: Lower Case, Upper Case, Digits, Special Characters.'
+      );
+
+    cy.get('[title="Password"]').clear().click().type('1232421');
+    cy.get('[data-role="password-strength-meter-label"]')
+      .should('be.visible')
+      .should('have.text', 'Weak');
+
+    cy.get('[title="Password"]').clear().click().type('Circle@1');
+    cy.get('[data-role="password-strength-meter-label"]')
+      .should('be.visible')
+      .should('have.text', 'Medium');
+
+    cy.get('[title="Password"]').clear().click().type('Triangle@123');
+    cy.get('[data-role="password-strength-meter-label"]')
+      .should('be.visible')
+      .should('have.text', 'Very Strong');
+  });
+
+  it('validate email field', () => {
+    cy.get('[title="Email"]').type('test');
+    cy.get('[class="action submit primary"]').click();
+    cy.get('[id="email_address-error"]')
+      .should('be.visible')
+      .should(
+        'have.text',
+        'Please enter a valid email address (Ex: johndoe@domain.com).'
+      );
+    cy.get('[title="Email"]').click().clear().type(randomEmail);
+  });
+
+  it('validate password and confirm password match', () => {
+    cy.reload();
+    cy.wait(1000);
+    cy.get('[title="Last Name"]').type('last');
+    cy.get('[title="Email"]').type(randomEmail);
+    cy.get('[title="Password"]').type('Triangle@123');
+    cy.get('[title="Confirm Password"]').type('qwerty');
+    cy.get('[title="First Name"]').type('first');
+    cy.get('[class="action submit primary"]').click();
+    cy.get('[id="password-confirmation-error"]')
+      .should('be.visible')
+      .should('have.text', 'Please enter the same value again.');
+  });
+
+  it('validate Existing account', () => {
+    cy.get('[title="Email"]').clear().type('teja@test.com');
+    cy.get('[title="Password"]').clear().type('Circle@123$');
+    cy.get('[title="Confirm Password"]').clear().type('Circle@123$');
+    cy.wait(1000);
+    cy.get('[class="action submit primary"]').click();
+
+    cy.get('[class="message-error error message"]').last().should('be.visible');
+  });
+  it('validate Existing account', () => {
+    cy.get('[title="Email"]').clear().type(randomEmail);
+    cy.get('[title="Password"]').type('Triangle@123');
+    cy.get('[title="Confirm Password"]').type('Triangle@123');
+    cy.get('[class="action submit primary"]').click();
+  });
+});
